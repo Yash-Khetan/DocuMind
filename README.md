@@ -143,16 +143,6 @@ POST /query
 
 ---
 
-### Get Chat History (Optional)
-
-```
-
-GET /chat/:document_id
-
-```
-
----
-
 ## 🧠 How Retrieval Works
 
 1. Convert user query into embedding
