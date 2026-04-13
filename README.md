@@ -166,11 +166,11 @@ npm run dev
 
 ---
 
-## 🚀 Future Improvements
+## 🚀 Future Tasks (Upcoming Implementations)
 
 - Vector database integration (pgvector / Pinecone) for faster retrieval at scale
 - Multi-document querying across an entire knowledge base
-- Async processing with job queues for large document uploads
+- Production-grade async batch processing and task queues for stable, large document uploads
 - OCR support for scanned documents
 - Markdown rendering for AI responses
 
