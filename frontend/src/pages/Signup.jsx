@@ -1,31 +1,32 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogIn, AtSign, Lock, AlertCircle, Sparkles } from 'lucide-react';
+import { UserPlus, AtSign, Lock, User, AlertCircle, Sparkles } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-const Login = () => {
+const Signup = () => {
   const navigate = useNavigate();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/login`, {
+      const response = await fetch(`${API_URL}/api/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password, name })
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || "Invalid login credentials.");
+        setError(data.message || "Registration failed.");
         return;
       }
 
@@ -34,7 +35,7 @@ const Login = () => {
       navigate('/chat');
     } catch (err) {
       setError("Network error. Please try again.");
-      console.error("Login Error:", err.message);
+      console.error("Signup Error:", err.message);
     } finally {
       setIsLoading(false);
     }
@@ -47,8 +48,8 @@ const Login = () => {
           <Sparkles color="var(--accent-primary)" size={32} />
         </div>
 
-        <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', fontWeight: 800 }}>Welcome back</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>Sign in to continue to DocuMind</p>
+        <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', fontWeight: 800 }}>Create account</h2>
+        <p style={{ color: 'var(--text-secondary)' }}>Get started with DocuMind</p>
 
         {error && (
           <div style={{ color: '#ef4444', background: '#fef2f2', padding: '0.8rem', borderRadius: '8px', marginTop: '1.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #fecaca' }}>
@@ -56,7 +57,21 @@ const Login = () => {
           </div>
         )}
 
-        <form className="auth-form" onSubmit={handleLogin}>
+        <form className="auth-form" onSubmit={handleSignup}>
+          <div>
+            <label className="auth-label">Name</label>
+            <div style={{ position: 'relative' }}>
+              <User size={18} color="var(--text-secondary)" style={{ position: 'absolute', top: '15px', left: '16px' }} />
+              <input
+                className="input-field"
+                type="text"
+                placeholder="John Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                style={{ paddingLeft: '44px' }}
+              />
+            </div>
+          </div>
           <div>
             <label className="auth-label">Email Address</label>
             <div style={{ position: 'relative' }}>
@@ -83,22 +98,23 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
                 style={{ paddingLeft: '44px' }}
               />
             </div>
           </div>
 
           <button type="submit" className="btn-primary" style={{ marginTop: '1rem', width: '100%' }} disabled={isLoading}>
-            <LogIn size={20} /> {isLoading ? "Signing in..." : "Sign In"}
+            <UserPlus size={20} /> {isLoading ? "Creating account..." : "Sign Up"}
           </button>
         </form>
 
         <p style={{ marginTop: '2.5rem', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
-          Don't have an account? <Link to="/signup" style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>Sign up</Link>
+          Already have an account? <Link to="/login" style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>Sign in</Link>
         </p>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default Signup;

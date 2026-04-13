@@ -1,4 +1,6 @@
-import { PDFParse } from "pdf-parse";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const { PDFParse } = require("pdf-parse");
 import { chunkTextWithOverlap } from "./chunksGeneration.js";
 import { generate_embeddings } from "./embeddingsGeneration.js";
 import { db } from "../src/db/index.js";
@@ -18,11 +20,15 @@ export const uploadController = async (req, res) => {
     }
 
     try {
-        const parser = new PDFParse({ buffer: file.buffer });
-        const data = await parser.getText();
+        // Pass the buffer exactly how pdf-parse expects it
+        const parser = new PDFParse({ data: file.buffer });
 
-        if (!data || !data.text) {
-            return res.status(400).json({ message: "No text found" });
+        // In this version of pdf-parse, getText() returns an object with a .text property
+        const data = await parser.getText();
+        const extractedText = data.text;
+
+        if (!extractedText || typeof extractedText !== 'string' || extractedText.trim() === '') {
+            return res.status(400).json({ message: "No text found in PDF" });
         }
 
         // 1. Insert document record
@@ -34,7 +40,7 @@ export const uploadController = async (req, res) => {
         console.log("Document inserted:", doc.id);
 
         // 2. Chunk the text
-        const textChunks = chunkTextWithOverlap(data.text, 400, 100);
+        const textChunks = chunkTextWithOverlap(extractedText, 400, 100);
 
         // 3. Generate embeddings for all chunks
         const embeddings = await generate_embeddings(textChunks);

@@ -13,7 +13,7 @@ const Landing = () => {
         </h2>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <Link to="/login" className="btn-secondary">Log in</Link>
-          <Link to="/login" className="btn-primary">Sign up</Link>
+          <Link to="/signup" className="btn-primary">Sign up</Link>
         </div>
       </nav>
 

@@ -2,6 +2,7 @@ import express from "express";
 import { uploadController } from "../controllers/uploadController.js";
 import { queryController } from "../controllers/queryController.js";
 import { historyController } from "../controllers/historyController.js";
+import { registerController, loginController } from "../controllers/authController.js";
 import { verifyToken } from "../middlewares/authmiddleware.js";
 import multer from "multer";
 import rateLimit from "express-rate-limit";
@@ -13,7 +14,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 const queryLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 2,
-    keyGenerator: (req) => req.user?.uid || req.ip, // per-user (set by verifyToken)
+    keyGenerator: (req) => req.user?.uid, // per-user (always set by verifyToken which runs first)
     message: { message: "Rate limit exceeded. You can make 2 queries per hour." },
     standardHeaders: true,
     legacyHeaders: false,
@@ -21,6 +22,11 @@ const queryLimiter = rateLimit({
 
 const router = express.Router();
 
+// Auth routes (no token required)
+router.post("/register", registerController);
+router.post("/login", loginController);
+
+// Protected routes
 router.get("/history", verifyToken, historyController);
 router.post("/upload", verifyToken, upload.single('file'), uploadController);
 router.post("/query", verifyToken, queryLimiter, queryController);

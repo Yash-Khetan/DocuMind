@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../firebase';
-import { signOut } from 'firebase/auth';
 import { Send, UploadCloud, FileText, LogOut, Loader2, Sparkles } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -18,6 +16,8 @@ const Chat = () => {
   const fileInputRef = useRef(null);
   const chatEndRef = useRef(null);
 
+  const getToken = () => localStorage.getItem("token");
+
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -27,47 +27,55 @@ const Chat = () => {
   }, [messages]);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (!user) {
-        navigate('/');
-      } else {
-        try {
-          const token = await user.getIdToken();
-          const response = await fetch(`${API_URL}/api/history`, {
-             headers: { "Authorization": `Bearer ${token}` }
-          });
-          if (response.ok) {
-            const data = await response.json();
-            if (data.activeDocument) {
-              setActiveDocumentId(data.activeDocument.id);
-              setDocName(data.activeDocument.name);
-              if (data.chats && data.chats.length > 0) {
-                 const historyMessages = data.chats.flatMap(c => [
-                   { role: 'user', content: c.question },
-                   { role: 'ai', content: c.response }
-                 ]);
-                 setMessages([
-                    { role: 'ai', content: `Session restored. Connected to: ${data.activeDocument.name}` },
-                    ...historyMessages
-                 ]);
-              }
+    const token = getToken();
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    const loadHistory = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/history`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          // Token expired or invalid — force re-login
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          navigate('/login');
+          return;
+        }
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.activeDocument) {
+            setActiveDocumentId(data.activeDocument.id);
+            setDocName(data.activeDocument.name);
+            if (data.chats && data.chats.length > 0) {
+              const historyMessages = data.chats.flatMap(c => [
+                { role: 'user', content: c.question },
+                { role: 'ai', content: c.response }
+              ]);
+              setMessages([
+                { role: 'ai', content: `Session restored. Connected to: ${data.activeDocument.name}` },
+                ...historyMessages
+              ]);
             }
           }
-        } catch (err) {
-          console.error("Failed to load history", err);
         }
+      } catch (err) {
+        console.error("Failed to load history", err);
       }
-    });
-    return () => unsubscribe();
+    };
+
+    loadHistory();
   }, [navigate]);
 
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      navigate('/');
-    } catch (error) {
-      console.error("Error signing out", error);
-    }
+  const handleSignOut = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate('/');
   };
 
   const handleFileUpload = async (e) => {
@@ -81,7 +89,7 @@ const Chat = () => {
     setMessages(prev => [...prev, { role: 'ai', content: `Processing upload for "${file.name}"...` }]);
 
     try {
-      const token = await auth.currentUser.getIdToken();
+      const token = getToken();
       const formData = new FormData();
       formData.append('file', file);
 
@@ -121,7 +129,7 @@ const Chat = () => {
     setMessages(prev => [...prev, { role: 'ai', content: '', id: streamingId, isStreaming: true }]);
 
     try {
-      const token = await auth.currentUser.getIdToken();
+      const token = getToken();
       const response = await fetch(`${API_URL}/api/query`, {
         method: "POST",
         headers: {
