@@ -24,6 +24,7 @@ export const historyController = async (req, res) => {
         
         return res.status(200).json({
             activeDocument: latestDoc,
+            allDocuments: userDocs,
             chats: documentChats
         });
     } catch (error) {

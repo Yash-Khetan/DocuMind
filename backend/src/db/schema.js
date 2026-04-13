@@ -39,3 +39,10 @@ export const chats = pgTable("chats", {
   response: text("response").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// ─── Waitlist Table ───
+export const waitlist_users = pgTable("waitlist_users", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  email: text("email").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

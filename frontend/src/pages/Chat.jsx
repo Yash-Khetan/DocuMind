@@ -13,6 +13,7 @@ const Chat = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [activeDocumentId, setActiveDocumentId] = useState(null);
   const [docName, setDocName] = useState(null);
+  const [historyDocs, setHistoryDocs] = useState([]);
   const fileInputRef = useRef(null);
   const chatEndRef = useRef(null);
 
@@ -49,6 +50,10 @@ const Chat = () => {
 
         if (response.ok) {
           const data = await response.json();
+          if (data.allDocuments) {
+            setHistoryDocs(data.allDocuments);
+          }
+          
           if (data.activeDocument) {
             setActiveDocumentId(data.activeDocument.id);
             setDocName(data.activeDocument.name);
@@ -103,6 +108,8 @@ const Chat = () => {
       if (response.ok) {
         setActiveDocumentId(data.documentId);
         setDocName(file.name);
+        // Add to front of history list immediately
+        setHistoryDocs(prev => [{ id: data.documentId, name: file.name }, ...prev]);
         setMessages(prev => [...prev, { role: 'ai', content: `Document verified. You may now query "${file.name}".` }]);
       } else {
         setMessages(prev => [...prev, { role: 'ai', content: `Upload rejected: ${data.message || data.error}` }]);
@@ -138,6 +145,24 @@ const Chat = () => {
         },
         body: JSON.stringify({ question: currentInput, documentId: activeDocumentId })
       });
+
+      if (response.status === 429) {
+        setMessages(prev => prev.map(msg => {
+          if (msg.id === streamingId) {
+             return { 
+                ...msg, 
+                content: (
+                  <span>
+                    Free quota reached! <a href="/upgrade" onClick={(e) => { e.preventDefault(); navigate('/upgrade'); }} style={{ color: 'var(--accent-primary)', fontWeight: 'bold', textDecoration: 'none' }}>Upgrade Now</a> to continue.
+                  </span>
+                ), 
+                isStreaming: false 
+             };
+          }
+          return msg;
+        }));
+        return;
+      }
 
       if (!response.ok) throw new Error("Query Failed");
 
@@ -213,6 +238,38 @@ const Chat = () => {
               {docName ? docName : "Click or drop file"}
             </p>
           </div>
+
+          {historyDocs.length > 0 && (
+            <>
+              <h3 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', margin: '2.5rem 0 1rem 0' }}>
+                Document History
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {historyDocs.map(doc => (
+                  <div 
+                    key={doc.id} 
+                    onClick={() => { setActiveDocumentId(doc.id); setDocName(doc.name); }} 
+                    style={{ 
+                        padding: '10px 12px', 
+                        background: activeDocumentId === doc.id ? 'var(--hover-bg)' : 'transparent', 
+                        border: activeDocumentId === doc.id ? '1px solid var(--border-color)' : '1px solid transparent', 
+                        borderRadius: '8px', 
+                        cursor: 'pointer', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        color: activeDocumentId === doc.id ? 'var(--text-primary)' : 'var(--text-secondary)', 
+                        transition: 'all 0.2s', 
+                        fontSize: '0.9rem' 
+                    }}
+                  >
+                    <FileText size={16} style={{ flexShrink: 0 }} />
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.name}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="sidebar-footer">

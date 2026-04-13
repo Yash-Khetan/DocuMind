@@ -3,6 +3,7 @@ import { uploadController } from "../controllers/uploadController.js";
 import { queryController } from "../controllers/queryController.js";
 import { historyController } from "../controllers/historyController.js";
 import { registerController, loginController } from "../controllers/authController.js";
+import { waitlistController } from "../controllers/waitlistController.js";
 import { verifyToken } from "../middlewares/authmiddleware.js";
 import multer from "multer";
 import rateLimit from "express-rate-limit";
@@ -25,6 +26,9 @@ const router = express.Router();
 // Auth routes (no token required)
 router.post("/register", registerController);
 router.post("/login", loginController);
+
+// Public route for Waitlist
+router.post("/waitlist", waitlistController);
 
 // Protected routes
 router.get("/history", verifyToken, historyController);

@@ -4,6 +4,7 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Chat from './pages/Chat';
+import Upgrade from './pages/Upgrade';
 import './index.css';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/chat" element={<Chat />} />
+        <Route path="/upgrade" element={<Upgrade />} />
       </Routes>
     </BrowserRouter>
   );
